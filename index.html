@@ -388,36 +388,33 @@
         const celebrationOverlay = document.getElementById('celebration-overlay');
 
         // --- State ---
-        let currentWord = null; // Will hold the word object from WORD_DATABASE
-        let correctSlices = []; // Array to track correct placements
-        let draggingSlice = null; // The slice element being dragged
+        let currentWord = null;
+        let correctSlices = [];
+        let draggingSlice = null;
 
         // --- TOUCH DRAG STATE ---
         let initialOffsetX = 0;
         let initialOffsetY = 0;
+        let startClientX = 0;
+        let startClientY = 0;
+        let isDragging = false;
         let currentDropZone = null;
         let sliceOriginalParent = null;
+        const DRAG_THRESHOLD = 3;
 
-        // --- Functions (Unmodified) ---
+        // --- Functions ---
 
-        /**
-         * Shows the specified screen and hides others
-         * @param {string} screenId ('home', 'levels', or 'game')
-         */
         function showScreen(screenId) {
-            // Hide all screens
             for (const key in screens) {
-                if (screens[key]) { // Check if element exists
+                if (screens[key]) {
                     screens[key].style.display = 'none';
                 }
             }
 
-            // Show the target screen
             if (screens[screenId]) {
                 if (screenId === 'levels') {
                     screens[screenId].style.display = 'block';
                 } else {
-                    // home and game screens use flex
                     screens[screenId].style.display = 'flex';
                 }
             } else {
@@ -425,68 +422,46 @@
             }
         }
 
-        /**
-         * Calculates the correct width and height classes for slices
-         * Assumes the final image should be roughly square.
-         * @param {number} numSlices - The number of slices (e.g., 2 or 3)
-         */
         function getSliceDimensions(numSlices) {
-            // Base Height: 160px (h-40) on mobile, 224px (h-56) on desktop
             const heightClasses = 'h-40 md:h-56';
             let widthClasses = '';
 
             switch (numSlices) {
                 case 2:
-                    // Width = 160/2 = 80px (w-20), 224/2 = 112px (w-28)
                     widthClasses = 'w-20 md:w-28';
                     break;
                 case 3:
-                    // Width = 160/3 = 53.3px (w-14 is 56px), 224/3 = 74.6px (w-20 is 80px)
-                    // This is the closest approximation with Tailwind classes.
                     widthClasses = 'w-14 md:w-20';
                     break;
                 case 4:
-                    // Width = 160/4 = 40px (w-10), 224/4 = 56px (w-14)
                     widthClasses = 'w-10 md:w-14';
                     break;
-                default: // 1 slice or fallback
-                    // Width = 160px (w-40), 224px (w-56)
+                default:
                     widthClasses = 'w-40 md:w-56';
             }
             return { heightClasses, widthClasses };
         }
 
-
-        /**
-         * Populates the level selection grid
-         */
         function populateLevelGrid() {
-            levelGrid.innerHTML = ''; // Clear existing grid
+            levelGrid.innerHTML = '';
             WORD_DATABASE.forEach(word => {
                 const card = document.createElement('button');
-                // Added 'relative' class
                 card.className = 'level-card aspect-square bg-white rounded-2xl shadow-lg flex justify-center items-center transform transition-transform duration-200 hover:scale-105 active:scale-95 overflow-hidden relative';
                 card.dataset.wordName = word.name;
-                // Added a div for the name overlay
                 card.innerHTML = `
                     <img src="${word.image}" alt="${word.name}" class="w-full h-full object-cover">
                     <div class="absolute bottom-0 left-0 right-0 p-2 bg-black/50 text-center">
                         <span class="text-white font-bold text-lg uppercase">${word.name}</span>
                     </div>
                 `;
-                // FIX: Ensure 'word.name' is correctly captured in the closure for the click handler
-                const wordName = word.name; // Capture word name explicitly
+                const wordName = word.name;
                 card.addEventListener('click', () => {
-                    startGame(wordName); // Use the captured word name
+                    startGame(wordName);
                 });
                 levelGrid.appendChild(card);
             });
         }
 
-        /**
-         * Sets up and starts the game for a specific word
-         * @param {string} wordName - The name of the word (e.g., 'APPLE')
-         */
         function startGame(wordName) {
             currentWord = WORD_DATABASE.find(w => w.name === wordName);
             if (!currentWord) {
@@ -494,7 +469,6 @@
                 return;
             }
 
-            // Reset game state
             placeholderContainer.innerHTML = '';
             placeholderContainer.classList.add('gap-2');
             slicesContainer.innerHTML = '';
@@ -505,44 +479,30 @@
             const numSlices = currentWord.slices.length;
             const { heightClasses, widthClasses } = getSliceDimensions(numSlices);
 
-            // Create drop zones
             currentWord.slices.forEach((slice, index) => {
                 const dropZone = document.createElement('div');
-                // MODIFIED: Replaced fixed sizes with dynamic sizes
                 dropZone.className = `drop-zone ${heightClasses} ${widthClasses} border-4 border-dashed border-gray-400 rounded-lg flex justify-center items-center text-gray-400 text-4xl font-bold`;
                 dropZone.dataset.expectedId = slice.id;
                 placeholderContainer.appendChild(dropZone);
             });
 
-            // Create a shuffled version that is NEVER in correct order
             let shuffledSlices = [...currentWord.slices];
-
-            // Keep shuffling until order differs from original
             do {
                 shuffledSlices.sort(() => Math.random() - 0.5);
             } while (shuffledSlices.every((slice, i) => slice.id === currentWord.slices[i].id));
 
-
             shuffledSlices.forEach(slice => {
                 const sliceEl = document.createElement('div');
-                // MODIFIED: Replaced fixed sizes with dynamic sizes
-                // IMPORTANT: Added 'relative' class is now in CSS to correctly position the speaker button
                 sliceEl.className = `word-slice ${heightClasses} ${widthClasses} border-4 border-white rounded-lg shadow-lg cursor-grab`;
                 sliceEl.draggable = true;
                 sliceEl.dataset.id = slice.id;
 
-                // Set the slice's background image
                 sliceEl.style.backgroundImage = `url('${currentWord.image}')`;
-                // CSS magic to show only a "slice" of the image
                 sliceEl.style.backgroundSize = `${numSlices * 100}% 100%`;
 
-                // CORRECTED: Calculate background position
                 const position = (numSlices > 1) ? (slice.id / (numSlices - 1)) * 100 : 0;
                 sliceEl.style.backgroundPosition = `${position}% 0`;
 
-                // Create the word part and speaker button
-                // IMPORTANT: Removed 'absolute bottom-2 flex items-center justify-center' inline classes
-                // These are now handled by the CSS rule for .phonetic-speaker
                 sliceEl.innerHTML = `
                     <div class="phonetic-speaker bg-white/80 rounded-full px-3 py-1 shadow-md cursor-pointer hover:bg-white transition-colors" data-phonetic="${slice.phonetic}">
                         <span class="text-xl font-bold text-gray-800 mr-2">${slice.wordPart}</span>
@@ -552,20 +512,14 @@
                 slicesContainer.appendChild(sliceEl);
             });
 
-            // Switch to game screen
             showScreen('game');
         }
 
-        /**
-         * Speaks the given text or phonetic sound
-         * @param {string} text - The text to speak
-         */
         function speak(text) {
             if (!window.speechSynthesis) {
                 console.warn("Speech synthesis not supported in this browser.");
                 return;
             }
-            // Cancel any ongoing speech
             window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
@@ -575,30 +529,20 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        /**
-         * Checks if all slices are in the correct place
-         */
         function checkWinCondition() {
             if (correctSlices.every(slice => slice !== null)) {
-                // All slices are correct!
                 placeholderContainer.classList.remove('gap-2');
                 fullWordText.textContent = currentWord.name;
                 fullWordDisplay.classList.remove('hidden');
                 slicesContainer.innerHTML = '<h3 class="text-2xl font-bold text-green-600">Well Done!</h3>';
 
-                // Speak the full word
                 setTimeout(() => speak(currentWord.name), 500);
-
-                // Trigger celebration
                 playCelebration();
             }
         }
 
-        /**
-         * Creates a confetti celebration effect
-         */
         function playCelebration() {
-            celebrationOverlay.innerHTML = ''; // Clear old confetti
+            celebrationOverlay.innerHTML = '';
             for (let i = 0; i < 100; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
@@ -607,11 +551,10 @@
                 confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
                 confetti.style.height = `${Math.random() * 10 + 5}px`;
                 confetti.style.width = `${Math.random() * 10 + 5}px`;
-                confetti.style.transform = `rotate(${Math.random() * 360}deg) translateZ(0)`; // Added translateZ(0) for acceleration
+                confetti.style.transform = `rotate(${Math.random() * 360}deg) translateZ(0)`;
                 celebrationOverlay.appendChild(confetti);
             }
 
-            // Clear confetti after animation ends
             setTimeout(() => {
                 celebrationOverlay.innerHTML = '';
             }, 5000);
@@ -619,7 +562,6 @@
 
         // --- Event Listeners ---
 
-        // Screen Switching
         homePlayBtn.addEventListener('click', () => {
             populateLevelGrid();
             showScreen('levels');
@@ -629,47 +571,39 @@
             showScreen('levels');
         });
 
-        // Reset Button
         resetBtn.addEventListener('click', () => {
             if (currentWord) {
-                startGame(currentWord.name); // Restart current level
+                startGame(currentWord.name);
             }
         });
 
-        // Full Word Speaker
         fullWordDisplay.addEventListener('click', () => {
             if (currentWord) {
                 speak(currentWord.name);
             }
         });
 
-        // Phonetic Speaker (uses event delegation)
         document.body.addEventListener('click', (e) => {
             const speakerBtn = e.target.closest('.phonetic-speaker');
             if (speakerBtn) {
                 const phonetic = speakerBtn.dataset.phonetic;
                 if (phonetic) {
                     speak(phonetic);
-                    // Prevent the click event from bubbling up and possibly starting a drag if this was a touch
                     e.stopPropagation();
                 }
             }
         });
 
-        // --- Drag and Drop Logic (Desktop/Mouse - Unmodified) ---
+        // --- Desktop Drag and Drop ---
 
-        // For Draggable Slices
         document.body.addEventListener('dragstart', (e) => {
             if (e.target.classList.contains('word-slice')) {
-                // Check if a correct slice is being dragged (shouldn't happen, but good check)
                 if (e.target.classList.contains('correct')) {
                     e.preventDefault();
                     return;
                 }
                 draggingSlice = e.target;
-                // Set data for Firefox/IE compatibility (not strictly necessary for the logic, but good practice)
                 e.dataTransfer.setData('text/plain', e.target.dataset.id);
-                // Use setTimeout to ensure the 'dragging' class is applied *after* dragstart handles the image/data
                 setTimeout(() => e.target.classList.add('dragging'), 0);
             }
         });
@@ -681,9 +615,8 @@
             }
         });
 
-        // For Drop Zones
         placeholderContainer.addEventListener('dragover', (e) => {
-            e.preventDefault(); // Necessary to allow dropping
+            e.preventDefault();
             const dropZone = e.target.closest('.drop-zone');
             if (dropZone && !dropZone.classList.contains('correct') && !dropZone.querySelector('.word-slice')) {
                 dropZone.classList.add('drag-over');
@@ -701,7 +634,6 @@
             e.preventDefault();
             const dropZone = e.target.closest('.drop-zone');
 
-            // Only allow drop if there's a drop zone, a slice is being dragged, and the zone is empty
             if (!dropZone || !draggingSlice || dropZone.querySelector('.word-slice')) {
                 if (dropZone) dropZone.classList.remove('drag-over');
                 return;
@@ -712,15 +644,11 @@
             const expectedId = dropZone.dataset.expectedId;
 
             if (sliceId === expectedId) {
-                // --- CORRECT DROP ---
                 dropZone.innerHTML = '';
-
-                // Remove borders to "merge" them (as per your original intention)
                 dropZone.classList.remove('border-dashed', 'border-gray-400', 'rounded-lg');
                 draggingSlice.classList.remove('border-4', 'border-white', 'shadow-lg', 'rounded-lg');
 
                 dropZone.appendChild(draggingSlice);
-                // The correct class uses 'transition: none !important' to kill the transform
                 draggingSlice.classList.add('correct');
                 draggingSlice.classList.remove('cursor-grab');
                 draggingSlice.draggable = false;
@@ -735,103 +663,112 @@
                 checkWinCondition();
 
             } else {
-                // --- INCORRECT DROP ---
                 dropZone.classList.add('animate-shake');
                 setTimeout(() => dropZone.classList.remove('animate-shake'), 500);
             }
         });
 
-        // ------------------------------------------------------------------
-        // --- Touch Drag and Drop (Mobile Support) - Unmodified Fix ---
-        // ------------------------------------------------------------------
+        // --- Touch Drag and Drop (iPad/Mobile) ---
 
         document.body.addEventListener('touchstart', (e) => {
-            // Ignore multi-touch (e.g., pinch-to-zoom)
             if (e.touches.length > 1) return;
 
             const touchSlice = e.target.closest('.word-slice');
 
-            // Prevent drag if the click target is the speaker button
             if (e.target.closest('.phonetic-speaker') || touchSlice?.classList.contains('correct')) {
-                 draggingSlice = null; // Important reset
+                 draggingSlice = null;
                  return;
             }
 
             if (touchSlice) {
-                e.preventDefault(); // Prevent screen scrolling on drag start
+                e.preventDefault(); // Prevent delay immediately
 
                 draggingSlice = touchSlice;
-                sliceOriginalParent = draggingSlice.parentElement; // Store where it came from
+                sliceOriginalParent = draggingSlice.parentElement;
+                isDragging = false;
 
-                // Calculate the offset from the touch point to the slice's top-left corner
                 const rect = draggingSlice.getBoundingClientRect();
+
                 initialOffsetX = e.touches[0].clientX - rect.left;
                 initialOffsetY = e.touches[0].clientY - rect.top;
 
-                // CRITICAL FIX: Apply fixed position and drag style immediately
-                draggingSlice.classList.add('touch-dragging', 'dragging');
-
-                // Set the initial transform based on the current touch position
-                const currentX = e.touches[0].clientX - initialOffsetX;
-                const currentY = e.touches[0].clientY - initialOffsetY;
-
-                draggingSlice.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(1.1)`;
+                startClientX = e.touches[0].clientX;
+                startClientY = e.touches[0].clientY;
             }
         }, { passive: false });
 
         document.body.addEventListener('touchmove', (e) => {
             if (!draggingSlice) return;
-            e.preventDefault(); // Prevent screen scrolling
 
-            // Move the slice using translate3d for hardware acceleration
-            const currentX = e.touches[0].clientX - initialOffsetX;
-            const currentY = e.touches[0].clientY - initialOffsetY;
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
 
-            draggingSlice.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(1.1)`;
+            const deltaX = Math.abs(currentX - startClientX);
+            const deltaY = Math.abs(currentY - startClientY);
 
-            // Find the element underneath the center of the touch
-            let elementAtPoint = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-            let dropZone = elementAtPoint ? elementAtPoint.closest('.drop-zone') : null;
+            if (!isDragging && (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD)) {
+                isDragging = true;
 
-            // Handle drag-over visual feedback
-            if (currentDropZone && currentDropZone !== dropZone) {
-                currentDropZone.classList.remove('drag-over');
-                currentDropZone = null;
+                draggingSlice.classList.add('touch-dragging', 'dragging');
+
+                const rect = draggingSlice.getBoundingClientRect();
+                draggingSlice.style.width = rect.width + 'px';
+                draggingSlice.style.height = rect.height + 'px';
             }
 
-            if (dropZone && !dropZone.classList.contains('correct') && !dropZone.querySelector('.word-slice')) {
-                dropZone.classList.add('drag-over');
-                currentDropZone = dropZone;
-            }
+            if (isDragging) {
+                e.preventDefault();
 
+                const left = currentX - initialOffsetX;
+                const top = currentY - initialOffsetY;
+
+                draggingSlice.style.left = left + 'px';
+                draggingSlice.style.top = top + 'px';
+                draggingSlice.style.transform = 'scale(1.1) translateZ(0)';
+
+                draggingSlice.style.pointerEvents = 'none';
+                let elementAtPoint = document.elementFromPoint(currentX, currentY);
+                draggingSlice.style.pointerEvents = '';
+
+                let dropZone = elementAtPoint ? elementAtPoint.closest('.drop-zone') : null;
+
+                if (currentDropZone && currentDropZone !== dropZone) {
+                    currentDropZone.classList.remove('drag-over');
+                    currentDropZone = null;
+                }
+
+                if (dropZone && !dropZone.classList.contains('correct') && !dropZone.querySelector('.word-slice')) {
+                    dropZone.classList.add('drag-over');
+                    currentDropZone = dropZone;
+                }
+            }
         }, { passive: false });
 
         document.body.addEventListener('touchend', (e) => {
             if (!draggingSlice) return;
 
-            // Clean up temporary classes
             draggingSlice.classList.remove('dragging', 'touch-dragging');
 
-            if (currentDropZone) {
-                // --- Attempting a drop ---
+            if (isDragging && currentDropZone) {
                 currentDropZone.classList.remove('drag-over');
                 const sliceId = draggingSlice.dataset.id;
                 const expectedId = currentDropZone.dataset.expectedId;
 
                 if (sliceId === expectedId && !currentDropZone.querySelector('.word-slice')) {
-                    // --- CORRECT DROP (TOUCH) ---
                     currentDropZone.innerHTML = '';
 
-                    // CRITICAL FIX: Clear styles before appending to remove inline fixed positioning/transform
                     draggingSlice.style.transform = '';
                     draggingSlice.style.position = '';
+                    draggingSlice.style.left = '';
+                    draggingSlice.style.top = '';
+                    draggingSlice.style.width = '';
+                    draggingSlice.style.height = '';
+                    draggingSlice.style.pointerEvents = '';
+
                     currentDropZone.appendChild(draggingSlice);
 
-                    // Remove borders to "merge" them (as per your original intention)
                     currentDropZone.classList.remove('border-dashed', 'border-gray-400', 'rounded-lg');
                     draggingSlice.classList.remove('border-4', 'border-white', 'shadow-lg', 'rounded-lg');
-
-                    // Apply the 'correct' class to remove all transformation styles
                     draggingSlice.classList.add('correct');
                     draggingSlice.classList.remove('cursor-grab');
                     draggingSlice.draggable = false;
@@ -839,39 +776,45 @@
                     correctSlices[parseInt(sliceId)] = draggingSlice;
 
                     const phonetic = draggingSlice.querySelector('.phonetic-speaker')?.dataset.phonetic;
-                    if (phonetic) {
-                        speak(phonetic);
-                    }
+                    if (phonetic) { speak(phonetic); }
 
                     checkWinCondition();
                 } else {
-                    // --- INCORRECT DROP (TOUCH) ---
-                    // CRITICAL FIX: Clear styles before appending back to original container
                     draggingSlice.style.transform = '';
                     draggingSlice.style.position = '';
+                    draggingSlice.style.left = '';
+                    draggingSlice.style.top = '';
+                    draggingSlice.style.width = '';
+                    draggingSlice.style.height = '';
+                    draggingSlice.style.pointerEvents = '';
+
                     sliceOriginalParent.appendChild(draggingSlice);
 
-                    // Optional: shake the incorrect drop zone
-                    currentDropZone.classList.add('animate-shake');
-                    setTimeout(() => currentDropZone.classList.remove('animate-shake'), 500);
+                    if (currentDropZone) {
+                        currentDropZone.classList.add('animate-shake');
+                        setTimeout(() => currentDropZone.classList.remove('animate-shake'), 500);
+                    }
                 }
-            } else {
-                // --- No drop zone found (return to original) ---
-                // CRITICAL FIX: Clear styles before appending back to original container
+            } else if (isDragging) {
                 draggingSlice.style.transform = '';
                 draggingSlice.style.position = '';
+                draggingSlice.style.left = '';
+                draggingSlice.style.top = '';
+                draggingSlice.style.width = '';
+                draggingSlice.style.height = '';
+                draggingSlice.style.pointerEvents = '';
+
                 sliceOriginalParent.appendChild(draggingSlice);
             }
 
-            // Final state reset
             draggingSlice = null;
             currentDropZone = null;
             sliceOriginalParent = null;
+            isDragging = false;
         });
 
-
         // --- Initial Setup ---
-        showScreen('home'); // Show the home screen first
+        showScreen('home');
 
     });
 </script>
