@@ -47,8 +47,8 @@
 
         /* Style for the draggable slices */
         .word-slice {
-            /* ADDED: A small delay to allow the touch-start to register */
-            transition: all 0.2s ease-in-out;
+            /* REMOVED transition for instant response */
+            transition: none;
 
             /* KEEP: For mobile drag/drop to work */
             touch-action: none;
@@ -57,8 +57,14 @@
             background-size: 0% 0%;
             background-repeat: no-repeat;
 
-            /* ADDED: Necessary for touch-based hardware acceleration */
-            will-change: transform;
+            /* ADDED: Hardware acceleration */
+            will-change: transform, left, top;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            perspective: 1000px;
+            -webkit-perspective: 1000px;
+
             cursor: grab;
 
             /* ADDED: Must be relative to position the speaker button inside it */
@@ -400,7 +406,7 @@
         let isDragging = false;
         let currentDropZone = null;
         let sliceOriginalParent = null;
-        const DRAG_THRESHOLD = 3;
+        const DRAG_THRESHOLD = 1;
 
         // --- Functions ---
 
@@ -700,6 +706,8 @@
         document.body.addEventListener('touchmove', (e) => {
             if (!draggingSlice) return;
 
+            e.preventDefault(); // Prevent scroll immediately
+
             const currentX = e.touches[0].clientX;
             const currentY = e.touches[0].clientY;
 
@@ -717,14 +725,13 @@
             }
 
             if (isDragging) {
-                e.preventDefault();
-
                 const left = currentX - initialOffsetX;
                 const top = currentY - initialOffsetY;
 
-                draggingSlice.style.left = left + 'px';
-                draggingSlice.style.top = top + 'px';
-                draggingSlice.style.transform = 'scale(1.1) translateZ(0)';
+                // Use transform instead of left/top for hardware acceleration
+                draggingSlice.style.transform = `translate3d(${left}px, ${top}px, 0) scale(1.1)`;
+                draggingSlice.style.left = '0';
+                draggingSlice.style.top = '0';
 
                 draggingSlice.style.pointerEvents = 'none';
                 let elementAtPoint = document.elementFromPoint(currentX, currentY);
