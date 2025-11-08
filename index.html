@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>WordSlice Phonetic Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -13,6 +15,13 @@
             font-family: 'Fredoka', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            /* Disable text selection for better drag experience */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* Disable tap highlight */
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Base screen class */
@@ -50,24 +59,29 @@
             /* REMOVED transition for instant response */
             transition: none;
 
-            /* KEEP: For mobile drag/drop to work */
+            /* CRITICAL: For immediate touch response */
             touch-action: none;
+            -ms-touch-action: none;
 
             /* KEEP: For image slicing */
             background-size: 0% 0%;
             background-repeat: no-repeat;
 
-            /* ADDED: Hardware acceleration */
-            will-change: transform, left, top;
-            transform: translateZ(0);
+            /* MAXIMUM Hardware acceleration */
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
             perspective: 1000px;
             -webkit-perspective: 1000px;
 
-            cursor: grab;
+            /* Disable tap delay on iOS */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
 
-            /* ADDED: Must be relative to position the speaker button inside it */
+            cursor: grab;
             position: relative;
         }
 
@@ -687,7 +701,7 @@
             }
 
             if (touchSlice) {
-                e.preventDefault(); // Prevent delay immediately
+                e.preventDefault();
 
                 draggingSlice = touchSlice;
                 sliceOriginalParent = draggingSlice.parentElement;
@@ -706,7 +720,7 @@
         document.body.addEventListener('touchmove', (e) => {
             if (!draggingSlice) return;
 
-            e.preventDefault(); // Prevent scroll immediately
+            e.preventDefault();
 
             const currentX = e.touches[0].clientX;
             const currentY = e.touches[0].clientY;
@@ -728,7 +742,6 @@
                 const left = currentX - initialOffsetX;
                 const top = currentY - initialOffsetY;
 
-                // Use transform instead of left/top for hardware acceleration
                 draggingSlice.style.transform = `translate3d(${left}px, ${top}px, 0) scale(1.1)`;
                 draggingSlice.style.left = '0';
                 draggingSlice.style.top = '0';
