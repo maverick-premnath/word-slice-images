@@ -2,7 +2,7 @@
   "name": "word-slice-game",
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://maverick-premnath.github.io/word-slice-images/",
+  "homepage": "https://maverick-premnath.github.io/word-slice-images",
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
