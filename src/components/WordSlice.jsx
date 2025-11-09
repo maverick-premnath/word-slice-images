@@ -133,8 +133,7 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
-      <button
-        className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/80 rounded-full px-3 py-1 shadow-md cursor-pointer hover:bg-white transition-colors flex items-center gap-2"
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/80 rounded-full px-3 py-1 shadow-md cursor-pointer hover:bg-white transition-colors flex items-center gap-2"
         onClick={(e) => {
           e.stopPropagation()
           ensureAudioReady()
@@ -143,10 +142,15 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
             pitch: 1.24,
           })
         }}
-        aria-label="Play sound"
       >
-        {speakerEmoji}
-      </button>
+        <span className="text-sm font-medium text-gray-800">{slice.phonetic}</span>
+        <button 
+          className="text-lg"
+          aria-label="Play sound"
+        >
+          {speakerEmoji}
+        </button>
+      </div>
     </motion.div>
   )
 }
