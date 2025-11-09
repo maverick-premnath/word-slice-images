@@ -302,7 +302,7 @@ class Bubble {
   }
 }
 
-export default function BubbleGame({ onComplete }) {
+export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
   const canvasRef = useRef(null)
   const bubblesRef = useRef([])
   const animationFrameRef = useRef(null)
@@ -455,30 +455,12 @@ export default function BubbleGame({ onComplete }) {
     })
   }, [onComplete, triggerPopSound])
 
+  const overlayStyle = backgroundStyle ? { ...backgroundStyle } : {}
+
   return (
     <motion.div
       className="fixed inset-0 z-50 pointer-events-auto"
-      style={{
-        backgroundImage: `
-          linear-gradient(to top, #7cd65a 0%, #7cd65a 22%, transparent 22%),
-          repeating-linear-gradient(
-            to right,
-            rgba(255,255,255,0.85) 0 18px,
-            rgba(255,255,255,0) 18px 36px
-          ),
-          radial-gradient(circle at 18% 72%, #63c77a 0%, #63c77a 32%, rgba(0,0,0,0) 34%),
-          radial-gradient(circle at 82% 74%, #63c77a 0%, #63c77a 32%, rgba(0,0,0,0) 34%),
-          radial-gradient(circle at 12% 38%, rgba(255,255,255,0.85) 0, rgba(255,255,255,0) 70px),
-          radial-gradient(circle at 40% 28%, rgba(255,255,255,0.8) 0, rgba(255,255,255,0) 65px),
-          radial-gradient(circle at 70% 32%, rgba(255,255,255,0.82) 0, rgba(255,255,255,0) 75px),
-          linear-gradient(#7fd8ff 0%, #74ccff 55%, #8eeeff 100%)
-        `,
-        backgroundSize: '100% 100px, 120px 110px, 320px 160px, 320px 160px, 240px 140px, 260px 150px, 260px 150px, 100% 100%'
-          ,
-        backgroundPosition: 'bottom, bottom 48px, bottom 54px 14%, bottom 54px 86%, top 14% 16%, top 24% 46%, top 20% 72%, top'
-          ,
-        backgroundRepeat: 'no-repeat, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat'
-      }}
+      style={overlayStyle}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

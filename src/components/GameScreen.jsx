@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import WordSlice from './WordSlice'
@@ -8,15 +8,17 @@ import BubbleGame from './BubbleGame'
 import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
 import { WORD_DATABASE } from '../data/words'
+import gameBg from '../../game-bg.svg'
 
 export default function GameScreen() {
-  const { currentWord, correctSlices, setCorrectSlice, setScreen, resetGame } = useGameStore()
+  const { currentWord, correctSlices, setCorrectSlice, resetGame, startGame, goToLevels } = useGameStore()
   const [shuffledSlices, setShuffledSlices] = useState([])
   const [showCelebration, setShowCelebration] = useState(false)
   const [showBubbles, setShowBubbles] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const [hasPlayedWord, setHasPlayedWord] = useState(false)
   const [isSpeakingWord, setIsSpeakingWord] = useState(false)
+  const advanceTimeoutRef = useRef(null)
 
   useEffect(() => {
     if (!currentWord) return
@@ -77,6 +79,16 @@ export default function GameScreen() {
     }
   }
 
+  const handleBackToLevels = useCallback(() => {
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current)
+      advanceTimeoutRef.current = null
+    }
+    setShowBubbles(false)
+    setShowCelebration(false)
+    goToLevels()
+  }, [goToLevels])
+
   const handlePlayFullWord = useCallback(async () => {
     if (!currentWord || isSpeakingWord) return
 
@@ -103,133 +115,169 @@ export default function GameScreen() {
 
   const handleBubblesComplete = () => {
     setShowBubbles(false)
-    // Auto-advance to next word
-    const currentIndex = WORD_DATABASE.findIndex(w => w.name === currentWord.name)
-    const nextIndex = (currentIndex + 1) % WORD_DATABASE.length
+    if (!currentWord) return
+
+    const currentIndex = WORD_DATABASE.findIndex((w) => w.name === currentWord.name)
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % WORD_DATABASE.length
     const nextWord = WORD_DATABASE[nextIndex]
-    resetGame()
-    setTimeout(() => {
-      useGameStore.getState().startGame(nextWord)
-    }, 300)
+
+    // Allow the bubble overlay to fade out before advancing
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current)
+    }
+    advanceTimeoutRef.current = setTimeout(() => {
+      startGame(nextWord)
+      advanceTimeoutRef.current = null
+    }, 500)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimeoutRef.current) {
+        clearTimeout(advanceTimeoutRef.current)
+        advanceTimeoutRef.current = null
+      }
+    }
+  }, [])
+
+  const containerBackgroundStyle = {
+    backgroundImage: `url(${gameBg})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between p-4 md:p-8 relative overflow-hidden"
-         style={{ background: 'linear-gradient(135deg, #dbeafe, #fce7f3)' }}>
+    <div
+      className="min-h-screen flex flex-col items-center justify-between p-4 md:p-8 relative overflow-hidden"
+      style={containerBackgroundStyle}
+    >
       
       <AnimatePresence>
         {showCelebration && <Celebration />}
-        {showBubbles && <BubbleGame onComplete={handleBubblesComplete} />}
+        {showBubbles && (
+          <BubbleGame onComplete={handleBubblesComplete} />
+        )}
       </AnimatePresence>
 
-      <div className="w-full max-w-6xl flex justify-start mb-4">
-        <motion.button
-          onClick={() => {
-            resetGame()
-            setScreen('levels')
-          }}
-          className="text-lg font-medium text-gray-700 bg-white rounded-lg px-5 py-2 shadow-md hover:bg-gray-100 transition-colors"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentWord.name}
+          className="w-full flex flex-col items-center"
+          initial={{ x: 40, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -40, opacity: 0 }}
+          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
         >
-          ← Back to Levels
-        </motion.button>
-      </div>
+          {!showBubbles && (
+            <div className="w-full max-w-6xl flex justify-start mb-4">
+              <motion.button
+                onClick={handleBackToLevels}
+                className="text-lg font-medium text-gray-700 bg-white rounded-lg px-5 py-2 shadow-md hover:bg-gray-100 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                ← Back to Levels
+              </motion.button>
+            </div>
+          )}
 
-      <motion.h2
-        className="text-4xl md:text-5xl font-bold text-center text-purple-700 my-4 md:my-0"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        Build the Word!
-      </motion.h2>
-
-      <AnimatePresence>
-        {isComplete && (
-          <motion.div
-            className="text-center my-6 flex flex-col items-center gap-4"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
+          <motion.h2
+            className="text-4xl md:text-5xl font-bold text-center text-purple-700 my-4 md:my-0"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
           >
-            <h2 className="text-5xl md:text-7xl font-bold text-green-600">
-              {currentWord.name}
-            </h2>
-            <p className="text-lg md:text-xl text-sky-700 max-w-md">
-              Press play to hear the whole word. The bubble party will begin right after!
-            </p>
-            <motion.button
-              whileHover={{ scale: isSpeakingWord ? 1 : 1.05 }}
-              whileTap={{ scale: isSpeakingWord ? 1 : 0.95 }}
-              disabled={isSpeakingWord}
-              onClick={handlePlayFullWord}
-              className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-xl font-semibold transition-colors ${
-                isSpeakingWord ? 'bg-slate-300 text-slate-500' : 'bg-pink-500 hover:bg-pink-400 text-white'
-              }`}
-              style={{ touchAction: 'manipulation' }}
-            >
-              <span className="text-3xl">▶️</span>
-              {isSpeakingWord ? 'Playing...' : hasPlayedWord ? 'Play the word again' : 'Play the word'}
-            </motion.button>
-          </motion.div>
-        )}
+            Build the Word!
+          </motion.h2>
+
+          <AnimatePresence>
+            {isComplete && (
+              <motion.div
+                className="text-center my-6 flex flex-col items-center gap-4"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+              >
+                <h2 className="text-5xl md:text-7xl font-bold text-green-600">
+                  {currentWord.name}
+                </h2>
+                <p className="text-lg md:text-xl text-sky-700 max-w-md">
+                  Press play to hear the whole word. The bubble party will begin right after!
+                </p>
+                <motion.button
+                  whileHover={{ scale: isSpeakingWord ? 1 : 1.05 }}
+                  whileTap={{ scale: isSpeakingWord ? 1 : 0.95 }}
+                  disabled={isSpeakingWord}
+                  onClick={handlePlayFullWord}
+                  className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-xl font-semibold transition-colors ${
+                    isSpeakingWord ? 'bg-slate-300 text-slate-500' : 'bg-pink-500 hover:bg-pink-400 text-white'
+                  }`}
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  <span className="text-3xl">▶️</span>
+                  {isSpeakingWord ? 'Playing...' : hasPlayedWord ? 'Play the word again' : 'Play the word'}
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex flex-row justify-center my-8 md:my-12 gap-2">
+            {currentWord.slices.map((slice, index) => (
+              <DropZone
+                key={index}
+                expectedId={slice.id}
+                height={height}
+                width={width}
+                placedSlice={correctSlices[index]}
+                word={currentWord}
+                onDrop={(sliceId) => handleDrop(index, sliceId)}
+              />
+            ))}
+          </div>
+
+          <div className="w-full max-w-4xl flex flex-row flex-wrap justify-center items-center gap-4 md:gap-6 p-6 bg-white/50 rounded-2xl shadow-inner min-h-[150px]">
+            {isComplete ? (
+              <motion.h3
+                className="text-2xl font-bold text-green-600"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                Well Done!
+              </motion.h3>
+            ) : (
+              availableSlices.map((slice) => (
+                <WordSlice
+                  key={slice.id}
+                  slice={slice}
+                  word={currentWord}
+                  height={height}
+                  width={width}
+                  onDrop={(dropZoneId) => {
+                    // Find the drop zone index
+                    const dropZoneIndex = currentWord.slices.findIndex(s => s.id === dropZoneId)
+                    if (dropZoneIndex !== -1) {
+                      handleDrop(dropZoneIndex, slice.id)
+                    }
+                  }}
+                />
+              ))
+            )}
+          </div>
+
+          <motion.button
+            onClick={() => {
+              resetGame()
+              useGameStore.getState().startGame(currentWord)
+            }}
+            className="text-xl font-semibold text-white bg-red-500 rounded-lg px-8 py-3 shadow-md hover:bg-red-600 transition-colors mt-8"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Reset
+          </motion.button>
+        </motion.div>
       </AnimatePresence>
-
-      <div className="flex flex-row justify-center my-8 md:my-12 gap-2">
-        {currentWord.slices.map((slice, index) => (
-          <DropZone
-            key={index}
-            expectedId={slice.id}
-            height={height}
-            width={width}
-            placedSlice={correctSlices[index]}
-            word={currentWord}
-            onDrop={(sliceId) => handleDrop(index, sliceId)}
-          />
-        ))}
-      </div>
-
-      <div className="w-full max-w-4xl flex flex-row flex-wrap justify-center items-center gap-4 md:gap-6 p-6 bg-white/50 rounded-2xl shadow-inner min-h-[150px]">
-        {isComplete ? (
-          <motion.h3
-            className="text-2xl font-bold text-green-600"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            Well Done!
-          </motion.h3>
-        ) : (
-          availableSlices.map((slice) => (
-            <WordSlice
-              key={slice.id}
-              slice={slice}
-              word={currentWord}
-              height={height}
-              width={width}
-              onDrop={(dropZoneId) => {
-                // Find the drop zone index
-                const dropZoneIndex = currentWord.slices.findIndex(s => s.id === dropZoneId)
-                if (dropZoneIndex !== -1) {
-                  handleDrop(dropZoneIndex, slice.id)
-                }
-              }}
-            />
-          ))
-        )}
-      </div>
-
-      <motion.button
-        onClick={() => {
-          resetGame()
-          useGameStore.getState().startGame(currentWord)
-        }}
-        className="text-xl font-semibold text-white bg-red-500 rounded-lg px-8 py-3 shadow-md hover:bg-red-600 transition-colors mt-8"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        Reset
-      </motion.button>
     </div>
   )
 }
