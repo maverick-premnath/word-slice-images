@@ -365,32 +365,6 @@ class BubbleManager {
   }
 }
 
-// Test component for audio debugging
-function SoundTest({ playPopSound }) {
-  return (
-    <button 
-      onClick={() => {
-        console.log('Manually triggering sound...');
-        playPopSound({ playbackRate: 1.0 });
-      }}
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        zIndex: 1000,
-        padding: '10px 20px',
-        background: '#4CAF50',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer'
-      }}
-    >
-      Test Sound
-    </button>
-  );
-}
-
 export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
   const containerRef = useRef(null)
   const bubblesRef = useRef([])
@@ -398,33 +372,9 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
   const lastFrameRef = useRef(0)
   const [poppedCount, setPoppedCount] = useState(0)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  // Using local sound file from public directory
-  // Test audio element
-  useEffect(() => {
-    // Create a test audio element
-    const testAudio = new Audio('/sounds/bubble-pop.mp3');
-    testAudio.volume = 0.6;
-    
-    // Try to play the sound after a short delay
-    const timer = setTimeout(() => {
-      console.log('Attempting to play test sound...');
-      testAudio.play().then(() => {
-        console.log('Test sound played successfully');
-      }).catch(err => {
-        console.error('Error playing test sound:', err);
-      });
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  const [playPopSound] = useSound('/sounds/bubble-pop.mp3', {
+  const [playPopSound] = useSound('/bubble-pop.mp3', {
     volume: 0.6,
-    interrupt: true,
-    html5: true,
-    preload: true,
-    onload: () => console.log('useSound: Audio loaded successfully'),
-    onerror: (err) => console.error('useSound: Error loading audio:', err)
+    interrupt: true
   })
 
   const BUBBLE_COUNT = 22
@@ -583,41 +533,32 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
   const overlayStyle = backgroundStyle ? { ...backgroundStyle } : {}
 
   return (
-    <div 
-      ref={containerRef}
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-        ...backgroundStyle
-      }}
+    <motion.div
+      className="fixed inset-0 z-50 pointer-events-auto"
+      style={overlayStyle}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8 }}
     >
       <canvas
-        ref={canvasRef}
+        ref={containerRef}
+        onClick={handleClick}
+        onTouchStart={handleTouch}
+        onTouchEnd={handleTouch}
         style={{
           display: 'block',
           width: '100%',
           height: '100%',
-          touchAction: 'none',
-          ...backgroundStyle
+          cursor: 'pointer',
+          background: 'transparent'
         }}
       />
-      <SoundTest playPopSound={playPopSound} />
-      <motion.div
-        className="fixed inset-0 z-50 pointer-events-auto"
-        style={overlayStyle}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.8 }}
-      >
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center">
-          <p className="text-lg font-bold text-purple-700 bg-white/80 px-4 py-2 rounded-full shadow-lg">
-            Pop {BUBBLE_COUNT - poppedCount} bubbles!
-          </p>
-        </div>
-      </motion.div>
-    </div>
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center">
+        <p className="text-lg font-bold text-purple-700 bg-white/80 px-4 py-2 rounded-full shadow-lg">
+          Pop {BUBBLE_COUNT - poppedCount} bubbles!
+        </p>
+      </div>
+    </motion.div>
   )
 }
