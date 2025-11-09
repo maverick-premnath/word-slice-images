@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-const speakerIconSvg = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/Speaker_Icon.svg'
 import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
 
-const speakerIconMarkup = { __html: speakerIconSvg }
+const speakerEmoji = '🔊'
 
 export default function WordSlice({ slice, word, height, width, onDrop }) {
   const [isPlaced, setIsPlaced] = useState(false)
@@ -134,7 +133,7 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
-      <div
+      <button
         className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/80 rounded-full px-3 py-1 shadow-md cursor-pointer hover:bg-white transition-colors flex items-center gap-2"
         onClick={(e) => {
           e.stopPropagation()
@@ -142,20 +141,12 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
           speak(slice.phonetic, {
             rate: 1.1,
             pitch: 1.24,
-            voiceHint: 'child'
           })
         }}
-        style={{ touchAction: 'manipulation' }}
+        aria-label="Play sound"
       >
-        <span className="text-xl font-bold text-gray-800">{slice.wordPart}</span>
-        <span
-          className="inline-flex items-center justify-center text-gray-800"
-          style={{ width: 24, height: 24 }}
-          aria-hidden="true"
-          dangerouslySetInnerHTML={speakerIconMarkup}
-        />
-      </div>
+        {speakerEmoji}
+      </button>
     </motion.div>
   )
 }
-

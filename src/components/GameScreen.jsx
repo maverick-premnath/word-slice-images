@@ -9,9 +9,8 @@ import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
 import { WORD_DATABASE } from '../data/words'
 import gameBg from '../../game-bg.svg'
-const speakerIconSvg = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/Speaker_Icon.svg'
 
-const speakerIconMarkup = { __html: speakerIconSvg }
+const speakerEmoji = '🔊'
 
 export default function GameScreen() {
   const { currentWord, correctSlices, setCorrectSlice } = useGameStore()
@@ -243,12 +242,9 @@ export default function GameScreen() {
                   }`}
                   style={{ touchAction: 'manipulation' }}
                 >
-                  <span
-                    className="inline-flex items-center justify-center text-white"
-                    style={{ width: 30, height: 30 }}
-                    aria-hidden="true"
-                    dangerouslySetInnerHTML={speakerIconMarkup}
-                  />
+                  <span className="text-2xl" aria-hidden="true">
+                    {speakerEmoji}
+                  </span>
                   {isSpeakingWord ? 'Playing...' : hasPlayedWord ? 'Play the word again' : 'Play the word'}
                 </motion.button>
               </motion.div>
