@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useSound from 'use-sound'
-import bubblesSvg from '../../bubbles.svg'
 
 const Bubble = ({ x, y, size, onPop, colorIndex }) => {
   const colors = ['#FF9EC8', '#FFD166', '#06D6A0', '#118AB2', '#9B5DE5']
