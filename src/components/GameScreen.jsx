@@ -9,7 +9,7 @@ import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
 import { WORD_DATABASE } from '../data/words'
 import gameBg from '../../game-bg.svg'
-import speakerIconSvg from '../../Speaker_Icon.svg?raw'
+const speakerIconSvg = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/Speaker_Icon.svg'
 
 const speakerIconMarkup = { __html: speakerIconSvg }
 

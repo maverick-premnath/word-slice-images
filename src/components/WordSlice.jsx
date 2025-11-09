@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import speakerIconSvg from '../../Speaker_Icon.svg?raw'
+const speakerIconSvg = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/Speaker_Icon.svg'
 import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
 
