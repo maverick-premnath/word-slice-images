@@ -1,9 +1,32 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import useSound from 'use-sound'
+import bubblesSvg from '../../bubbles.svg'
 
-class Bubble {
-  constructor(x, y, size, canvas) {
+const Bubble = ({ x, y, size, onPop, colorIndex }) => {
+  const colors = ['#FF9EC8', '#FFD166', '#06D6A0', '#118AB2', '#9B5DE5']
+  const color = colors[colorIndex % colors.length]
+
+  return (
+    <img
+      src={bubblesSvg}
+      alt="bubble"
+      style={{
+        position: 'absolute',
+        left: x - size/2,
+        top: y - size/2,
+        width: size,
+        height: size,
+        filter: `drop-shadow(0 0 8px ${color}80)`,
+        pointerEvents: 'none',
+        transform: 'translateZ(0)'
+      }}
+    />
+  )
+}
+
+class BubbleManager {
+  constructor(x, y, size, canvas, onPop) {
     this.x = x
     this.y = y
     this.size = size
@@ -12,12 +35,22 @@ class Bubble {
     this.vx = (Math.random() - 0.5) * 0.14
     this.vy = -0.07 - Math.random() * 0.1
     this.opacity = 0.85 + Math.random() * 0.15
-    this.hue = Math.random() * 60 // Iridescent colors
+    // More vibrant colors for the edges
+    this.colorVariants = [
+      {hue: 200, saturation: 90, lightness: 70},  // Blue
+      {hue: 340, saturation: 90, lightness: 75},  // Pink
+      {hue: 280, saturation: 80, lightness: 75},  // Purple
+      {hue: 50, saturation: 90, lightness: 75},   // Yellow
+      {hue: 160, saturation: 80, lightness: 70},  // Teal
+    ]
+    this.color = this.colorVariants[Math.floor(Math.random() * this.colorVariants.length)]
+    this.hue = this.color.hue
     this.rotation = Math.random() * Math.PI * 2
     this.rotationSpeed = (Math.random() - 0.5) * 0.004
     this.wobbleX = Math.random() * Math.PI * 2 // For gentle side-to-side wobble
     this.wobbleSpeed = 0.008 + Math.random() * 0.008
     this.state = 'alive'
+    this.onPop = onPop
     this.popTime = 0
     this.popDuration = 360 + Math.random() * 120
     this.particles = []
@@ -67,7 +100,7 @@ class Bubble {
   }
 
   createParticles() {
-    const count = 8 + Math.floor(Math.random() * 4)
+    const count = 10 + Math.floor(Math.random() * 6)
     const particles = []
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.7
@@ -79,8 +112,8 @@ class Bubble {
         vy: Math.sin(angle) * speed - 0.25,
         life: 0,
         maxLife: 26 + Math.random() * 12,
-        size: this.size * (0.12 + Math.random() * 0.08),
-        opacity: 0.85 + Math.random() * 0.1,
+        size: this.size * (0.15 + Math.random() * 0.1),
+        opacity: 0.7 + Math.random() * 0.2,
         hueOffset: Math.random() * 180
       })
     }
@@ -152,70 +185,102 @@ class Bubble {
     if (this.state === 'gone' && !this.particles.length) return
 
     if (this.state === 'alive') {
-      const gradient = ctx.createRadialGradient(
-        this.x - this.size * 0.35,
-        this.y - this.size * 0.35,
-        0,
-        this.x,
-        this.y,
-        this.size * 1.12
-      )
-
-      const hue1 = (this.hue + this.rotation * 20) % 360
-      const hue2 = (this.hue + 110 + this.rotation * 15) % 360
-      const hue3 = (this.hue + 250 + this.rotation * 10) % 360
-
-      gradient.addColorStop(0, `hsla(${hue1}, 95%, 96%, ${0.75 * this.opacity})`)
-      gradient.addColorStop(0.38, `hsla(${hue2}, 90%, 86%, ${0.55 * this.opacity})`)
-      gradient.addColorStop(0.72, `hsla(${hue3}, 70%, 78%, ${0.4 * this.opacity})`)
-      gradient.addColorStop(1, `hsla(${hue1}, 65%, 73%, ${0.24 * this.opacity})`)
-
       ctx.save()
-      ctx.globalCompositeOperation = 'lighter'
-      ctx.globalAlpha = 0.92
-      ctx.shadowColor = `hsla(${hue2}, 90%, 85%, 0.5)`
-      ctx.shadowBlur = this.size * 0.7
-      ctx.beginPath()
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
-      ctx.fillStyle = gradient
-      ctx.fill()
-
-      ctx.shadowBlur = this.size * 0.3
-      ctx.shadowColor = `hsla(${hue1}, 100%, 95%, 0.6)`
-      ctx.lineWidth = 1.4
-      ctx.strokeStyle = `hsla(${hue1}, 100%, 95%, 0.6)`
-      ctx.stroke()
-
-      const highlightGradient = ctx.createRadialGradient(
-        this.x - this.size * 0.45,
-        this.y - this.size * 0.45,
-        0,
-        this.x - this.size * 0.45,
-        this.y - this.size * 0.45,
-        this.size * 0.55
+      ctx.globalAlpha = this.opacity
+      
+      // Base bubble - mostly transparent with slight tint
+      const baseGradient = ctx.createRadialGradient(
+        this.x, this.y, 0,
+        this.x, this.y, this.size
       )
-      highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.85)')
-      highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
-
+      baseGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)')
+      baseGradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.05)')
+      baseGradient.addColorStop(1, 'rgba(255, 255, 255, 0.02)')
+      
+      // Draw base bubble
       ctx.beginPath()
       ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+      ctx.fillStyle = baseGradient
+      ctx.fill()
+      
+      // Colorful edge effect
+      const edgeGradient = ctx.createRadialGradient(
+        this.x, this.y, this.size * 0.7,
+        this.x, this.y, this.size
+      )
+      edgeGradient.addColorStop(0, `hsla(${this.color.hue}, 80%, 70%, 0.1)`)
+      edgeGradient.addColorStop(0.8, `hsla(${this.color.hue}, 90%, 70%, 0.5)`)
+      edgeGradient.addColorStop(1, `hsla(${this.color.hue}, 100%, 80%, 0.7)`)
+      
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+      ctx.fillStyle = edgeGradient
+      ctx.fill()
+      
+      // Main highlight (glossy effect)
+      const highlightGradient = ctx.createRadialGradient(
+        this.x - this.size * 0.4,
+        this.y - this.size * 0.4,
+        0,
+        this.x - this.size * 0.4,
+        this.y - this.size * 0.4,
+        this.size * 0.8
+      )
+      highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)')
+      highlightGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.4)')
+      highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+      
+      // Draw highlight with clipping to stay within bubble bounds
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+      ctx.clip()
+      
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.size * 1.2, 0, Math.PI * 2)
       ctx.fillStyle = highlightGradient
       ctx.fill()
-
-      const secondaryHighlight = ctx.createRadialGradient(
-        this.x + this.size * 0.25,
-        this.y + this.size * 0.25,
-        0,
-        this.x + this.size * 0.25,
-        this.y + this.size * 0.25,
-        this.size * 0.35
-      )
-      secondaryHighlight.addColorStop(0, `rgba(255, 255, 255, ${0.45 * this.opacity})`)
-      secondaryHighlight.addColorStop(1, 'rgba(255, 255, 255, 0)')
-
+      ctx.restore()
+      
+      // Subtle outline
       ctx.beginPath()
       ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
-      ctx.fillStyle = secondaryHighlight
+      ctx.strokeStyle = `hsla(${this.color.hue}, 80%, 90%, 0.6)`
+      ctx.lineWidth = 1.2
+      ctx.stroke()
+      
+      // Small highlight spot
+      const spotGradient = ctx.createRadialGradient(
+        this.x - this.size * 0.3,
+        this.y - this.size * 0.3,
+        0,
+        this.x - this.size * 0.3,
+        this.y - this.size * 0.3,
+        this.size * 0.3
+      )
+      spotGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)')
+      spotGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+      
+      ctx.beginPath()
+      ctx.arc(this.x - this.size * 0.2, this.y - this.size * 0.2, this.size * 0.25, 0, Math.PI * 2)
+      ctx.fillStyle = spotGradient
+      ctx.fill()
+      
+      // Add a subtle reflection at the bottom
+      const reflectionGradient = ctx.createRadialGradient(
+        this.x + this.size * 0.3,
+        this.y + this.size * 0.3,
+        0,
+        this.x + this.size * 0.3,
+        this.y + this.size * 0.3,
+        this.size * 0.4
+      )
+      reflectionGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)')
+      reflectionGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+      
+      ctx.beginPath()
+      ctx.arc(this.x + this.size * 0.2, this.y + this.size * 0.2, this.size * 0.4, 0, Math.PI * 2)
+      ctx.fillStyle = reflectionGradient
       ctx.fill()
 
       ctx.restore()
@@ -293,7 +358,6 @@ class Bubble {
     if (this.state !== 'alive') return false
     this.state = 'popping'
     this.popTime = 0
-    this.popDuration = 320 + Math.random() * 140
     this.particles = this.createParticles()
     if (typeof playSound === 'function') {
       playSound(this.size)
@@ -303,7 +367,7 @@ class Bubble {
 }
 
 export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
-  const canvasRef = useRef(null)
+  const containerRef = useRef(null)
   const bubblesRef = useRef([])
   const animationFrameRef = useRef(null)
   const lastFrameRef = useRef(0)
@@ -323,7 +387,7 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
   }, [playPopSound])
 
   useEffect(() => {
-    const canvas = canvasRef.current
+    const canvas = containerRef.current
     if (!canvas) return
 
     const updateDimensions = () => {
@@ -341,17 +405,17 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
     // Initialize bubbles with spacing to avoid initial overlaps
     const bubbles = []
     const minDistance = 150 // Minimum distance between bubble centers
-    
+
     for (let i = 0; i < BUBBLE_COUNT; i++) {
       let attempts = 0
       let x, y, size
       let validPosition = false
-      
+
       while (!validPosition && attempts < 50) {
         size = Math.random() * 40 + 50 // 50-90px (slightly smaller for better spacing)
         x = Math.random() * (canvas.width - size * 2) + size
         y = Math.random() * (canvas.height - size * 2) + size
-        
+
         // Check if this position is far enough from existing bubbles
         validPosition = true
         for (const existingBubble of bubbles) {
@@ -365,9 +429,17 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
         }
         attempts++
       }
-      
+
       if (validPosition || attempts >= 50) {
-        bubbles.push(new Bubble(x, y, size, canvas))
+        bubbles.push(new BubbleManager(x, y, size, canvas, (x, y) => {
+          setPoppedCount((prev) => {
+            const newCount = prev + 1
+            if (newCount >= BUBBLE_COUNT) {
+              setTimeout(() => onComplete(), 500)
+            }
+            return newCount
+          })
+        }))
       }
     }
     bubblesRef.current = bubbles
@@ -407,8 +479,12 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
     }
   }, [])
 
+  const handlePop = useCallback((x, y) => {
+    playPopSound()
+  }, [playPopSound])
+
   const handleClick = useCallback((e) => {
-    const canvas = canvasRef.current
+    const canvas = containerRef.current
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
@@ -432,7 +508,7 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
 
   const handleTouch = useCallback((e) => {
     e.preventDefault()
-    const canvas = canvasRef.current
+    const canvas = containerRef.current
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
@@ -467,7 +543,7 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
       transition={{ duration: 0.8 }}
     >
       <canvas
-        ref={canvasRef}
+        ref={containerRef}
         onClick={handleClick}
         onTouchStart={handleTouch}
         onTouchEnd={handleTouch}
