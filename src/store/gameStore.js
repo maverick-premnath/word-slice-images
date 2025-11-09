@@ -14,7 +14,7 @@ export const useGameStore = create((set) => ({
     return { correctSlices: newCorrectSlices };
   }),
   resetGame: () => set({ currentWord: null, correctSlices: [], isGameActive: false }),
-  goToLevels: () => set({ currentScreen: 'levels', currentWord: null, correctSlices: [], isGameActive: false }),
+  goToLevels: () => set({ currentScreen: 'levels', correctSlices: [], isGameActive: false }),
   startGame: (word) => set({ 
     currentWord: word, 
     correctSlices: new Array(word.slices.length).fill(null),

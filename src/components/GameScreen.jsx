@@ -11,7 +11,7 @@ import { WORD_DATABASE } from '../data/words'
 import gameBg from '../../game-bg.svg'
 
 export default function GameScreen() {
-  const { currentWord, correctSlices, setCorrectSlice, resetGame, startGame, goToLevels } = useGameStore()
+  const { currentWord, correctSlices, setCorrectSlice, resetGame, startGame } = useGameStore()
   const [shuffledSlices, setShuffledSlices] = useState([])
   const [showCelebration, setShowCelebration] = useState(false)
   const [showBubbles, setShowBubbles] = useState(false)
@@ -86,8 +86,8 @@ export default function GameScreen() {
     }
     setShowBubbles(false)
     setShowCelebration(false)
-    goToLevels()
-  }, [goToLevels])
+    useGameStore.getState().goToLevels()
+  }, [])
 
   const handlePlayFullWord = useCallback(async () => {
     if (!currentWord || isSpeakingWord) return
