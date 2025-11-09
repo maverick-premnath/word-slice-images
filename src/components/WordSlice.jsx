@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import speakerIconSvg from '../../Speaker_Icon.svg?raw'
 import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
+
+const speakerIconMarkup = { __html: speakerIconSvg }
 
 export default function WordSlice({ slice, word, height, width, onDrop }) {
   const [isPlaced, setIsPlaced] = useState(false)
@@ -145,7 +148,12 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
         style={{ touchAction: 'manipulation' }}
       >
         <span className="text-xl font-bold text-gray-800">{slice.wordPart}</span>
-        <span className="text-2xl">🔊</span>
+        <span
+          className="inline-flex items-center justify-center text-gray-800"
+          style={{ width: 24, height: 24 }}
+          aria-hidden="true"
+          dangerouslySetInnerHTML={speakerIconMarkup}
+        />
       </div>
     </motion.div>
   )

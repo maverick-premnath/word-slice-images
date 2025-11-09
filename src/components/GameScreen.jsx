@@ -9,9 +9,12 @@ import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
 import { WORD_DATABASE } from '../data/words'
 import gameBg from '../../game-bg.svg'
+import speakerIconSvg from '../../Speaker_Icon.svg?raw'
+
+const speakerIconMarkup = { __html: speakerIconSvg }
 
 export default function GameScreen() {
-  const { currentWord, correctSlices, setCorrectSlice, resetGame, startGame } = useGameStore()
+  const { currentWord, correctSlices, setCorrectSlice } = useGameStore()
   const [shuffledSlices, setShuffledSlices] = useState([])
   const [showCelebration, setShowCelebration] = useState(false)
   const [showBubbles, setShowBubbles] = useState(false)
@@ -89,6 +92,31 @@ export default function GameScreen() {
     useGameStore.getState().goToLevels()
   }, [])
 
+  const handleReset = useCallback(() => {
+    if (!currentWord) return
+
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current)
+      advanceTimeoutRef.current = null
+    }
+
+    setShowCelebration(false)
+    setShowBubbles(false)
+    setIsComplete(false)
+    setHasPlayedWord(false)
+    setIsSpeakingWord(false)
+
+    const freshSource = WORD_DATABASE.find((word) => word.name === currentWord.name)
+    if (!freshSource) return
+
+    const refreshedWord = {
+      ...freshSource,
+      slices: freshSource.slices.map((slice) => ({ ...slice }))
+    }
+
+    useGameStore.getState().startGame(refreshedWord)
+  }, [currentWord])
+
   const handlePlayFullWord = useCallback(async () => {
     if (!currentWord || isSpeakingWord) return
 
@@ -126,7 +154,7 @@ export default function GameScreen() {
       clearTimeout(advanceTimeoutRef.current)
     }
     advanceTimeoutRef.current = setTimeout(() => {
-      startGame(nextWord)
+      useGameStore.getState().startGame(nextWord)
       advanceTimeoutRef.current = null
     }, 500)
   }
@@ -215,7 +243,12 @@ export default function GameScreen() {
                   }`}
                   style={{ touchAction: 'manipulation' }}
                 >
-                  <span className="text-3xl">▶️</span>
+                  <span
+                    className="inline-flex items-center justify-center text-white"
+                    style={{ width: 30, height: 30 }}
+                    aria-hidden="true"
+                    dangerouslySetInnerHTML={speakerIconMarkup}
+                  />
                   {isSpeakingWord ? 'Playing...' : hasPlayedWord ? 'Play the word again' : 'Play the word'}
                 </motion.button>
               </motion.div>
@@ -266,10 +299,7 @@ export default function GameScreen() {
           </div>
 
           <motion.button
-            onClick={() => {
-              resetGame()
-              useGameStore.getState().startGame(currentWord)
-            }}
+            onClick={handleReset}
             className="text-xl font-semibold text-white bg-red-500 rounded-lg px-8 py-3 shadow-md hover:bg-red-600 transition-colors mt-8"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
