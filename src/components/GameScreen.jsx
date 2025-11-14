@@ -7,7 +7,7 @@ import Celebration from './Celebration'
 import BubbleGame from './BubbleGame'
 import { speak } from '../utils/speech'
 import { ensureAudioReady } from '../utils/audio'
-import { WORD_DATABASE } from '../data/words'
+import { WORD_DATABASE, getWordAssets } from '../data/words'
 import gameBg from '../../game-bg.svg'
 
 const speakerEmoji = '🔊'
@@ -69,14 +69,11 @@ export default function GameScreen() {
     const slice = currentWord.slices.find(s => s.id === sliceId)
     if (slice) {
       setCorrectSlice(dropZoneIndex, slice)
-      const phonetic = slice.phonetic
-      if (phonetic) {
-        ensureAudioReady()
-        speak(phonetic, {
-          rate: 1.05,
-          pitch: 1.22,
-          voiceHint: 'child'
-        })
+      // Play phonetic audio file instead of text-to-speech
+      const assets = getWordAssets(currentWord)
+      if (assets.phonetics[sliceId]) {
+        const audio = new Audio(assets.phonetics[sliceId])
+        audio.play().catch(e => console.log('Audio play failed:', e))
       }
     }
   }
@@ -121,13 +118,31 @@ export default function GameScreen() {
 
     try {
       setIsSpeakingWord(true)
-      ensureAudioReady()
-      await speak(currentWord.name, {
-        rate: 0.92,
-        pitch: 1.05,
-        lang: 'en-IN',
-        voiceHint: 'child'
-      })
+      // Try to play full word audio file first, fallback to speech synthesis
+      const assets = getWordAssets(currentWord)
+      if (assets.audio) {
+        const audio = new Audio(assets.audio)
+        try {
+          await audio.play()
+        } catch (e) {
+          console.log('Audio file failed, using speech synthesis:', e)
+          ensureAudioReady()
+          await speak(currentWord.name, {
+            rate: 0.92,
+            pitch: 1.05,
+            lang: 'en-IN',
+            voiceHint: 'child'
+          })
+        }
+      } else {
+        ensureAudioReady()
+        await speak(currentWord.name, {
+          rate: 0.92,
+          pitch: 1.05,
+          lang: 'en-IN',
+          voiceHint: 'child'
+        })
+      }
       if (!hasPlayedWord) {
         setHasPlayedWord(true)
         setTimeout(() => {

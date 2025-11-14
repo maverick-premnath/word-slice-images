@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { speak } from '../utils/speech'
-import { ensureAudioReady } from '../utils/audio'
+import { getWordAssets } from '../data/words'
 
 const speakerEmoji = '🔊'
 
@@ -106,13 +105,14 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
 
   const numSlices = word.slices.length
   const position = (numSlices > 1) ? (slice.id / (numSlices - 1)) * 100 : 0
+  const assets = getWordAssets(word)
 
   return (
     <motion.div
       ref={sliceRef}
       className={`word-slice ${height} ${width} border-4 border-white rounded-lg shadow-lg cursor-grab relative`}
       style={{
-        backgroundImage: `url('${word.image}')`,
+        backgroundImage: `url('${assets.image}')`,
         backgroundSize: `${numSlices * 100}% 100%`,
         backgroundPosition: `${position}% 0`,
         backgroundRepeat: 'no-repeat',
@@ -136,14 +136,14 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/80 rounded-full px-3 py-1 shadow-md cursor-pointer hover:bg-white transition-colors flex items-center gap-2"
         onClick={(e) => {
           e.stopPropagation()
-          ensureAudioReady()
-          speak(slice.phonetic, {
-            rate: 1.1,
-            pitch: 1.24,
-          })
+          // Play phonetic audio file
+          if (assets.phonetics[slice.id]) {
+            const audio = new Audio(assets.phonetics[slice.id])
+            audio.play().catch(e => console.log('Audio play failed:', e))
+          }
         }}
       >
-        <span className="text-sm font-medium text-gray-800">{slice.phonetic}</span>
+        <span className="text-sm font-medium text-gray-800">{slice.wordPart}</span>
         <button 
           className="text-lg"
           aria-label="Play sound"
