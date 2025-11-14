@@ -21,6 +21,7 @@ export default function GameScreen() {
   const [hasPlayedWord, setHasPlayedWord] = useState(false)
   const [isSpeakingWord, setIsSpeakingWord] = useState(false)
   const advanceTimeoutRef = useRef(null)
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false)
 
   useEffect(() => {
     if (!currentWord) return
@@ -45,10 +46,11 @@ export default function GameScreen() {
       setHasPlayedWord(false)
       setIsSpeakingWord(false)
       
-      // Automatically play the full word after a short delay
-      setTimeout(async () => {
+      // Store the timeout so it can be cleared if user navigates away
+      advanceTimeoutRef.current = setTimeout(async () => {
         setShowCelebration(false)
         await handleAutoPlayWord()
+        advanceTimeoutRef.current = null
       }, 1600)
     }
   }, [correctSlices, currentWord, isComplete])
@@ -134,12 +136,27 @@ export default function GameScreen() {
   }
 
   const handleBackToLevels = useCallback(() => {
+    // Stop any ongoing speech synthesis
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
+    
     if (advanceTimeoutRef.current) {
       clearTimeout(advanceTimeoutRef.current)
       advanceTimeoutRef.current = null
     }
+    
+    // Prevent completion UI from showing during navigation
+    setIsNavigatingBack(true)
+    
+    // Reset all completion-related state
     setShowBubbles(false)
     setShowCelebration(false)
+    setIsComplete(false)
+    setHasPlayedWord(false)
+    setIsSpeakingWord(false)
+    
+    // Navigate back to levels
     useGameStore.getState().goToLevels()
   }, [])
 
@@ -289,7 +306,7 @@ export default function GameScreen() {
           </motion.h2>
 
           <AnimatePresence>
-            {isComplete && !showBubbles && (
+            {isComplete && !showBubbles && !isNavigatingBack && (
               <motion.div
                 className="text-center my-6 flex flex-col items-center gap-6"
                 initial={{ opacity: 0, scale: 0.8 }}
