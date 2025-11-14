@@ -282,19 +282,18 @@ export default function GameScreen() {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: -40, opacity: 0 }}
           transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+          style={{ pointerEvents: showBubbles ? 'none' : 'auto' }}
         >
-          {!showBubbles && (
-            <div className="w-full max-w-6xl flex justify-start mb-4">
-              <motion.button
-                onClick={handleBackToLevels}
-                className="text-lg font-medium text-gray-700 bg-white rounded-lg px-5 py-2 shadow-md hover:bg-gray-100 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                ← Back to Levels
-              </motion.button>
-            </div>
-          )}
+          <div className="w-full max-w-6xl flex justify-start mb-4">
+            <motion.button
+              onClick={handleBackToLevels}
+              className="text-lg font-medium text-gray-700 bg-white rounded-lg px-5 py-2 shadow-md hover:bg-gray-100 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              ← Back to Levels
+            </motion.button>
+          </div>
 
           <motion.h2
             className="text-4xl md:text-5xl font-bold text-center text-purple-700 my-4 md:my-0"
@@ -365,19 +364,47 @@ export default function GameScreen() {
             )}
           </AnimatePresence>
 
-          <div className="flex flex-row justify-center my-8 md:my-12 gap-2">
-            {currentWord.slices.map((slice, index) => (
-              <DropZone
-                key={index}
-                expectedId={slice.id}
-                height={height}
-                width={width}
-                placedSlice={correctSlices[index]}
-                word={currentWord}
-                onDrop={(sliceId) => handleDrop(index, sliceId)}
-              />
-            ))}
-          </div>
+          {showBubbles ? (
+            // Show full merged image during bubble celebration
+            <div className="flex justify-center my-8 md:my-12">
+              <div className="relative">
+                {(() => {
+                  const assets = getWordAssets(currentWord)
+                  return assets.image ? (
+                    <img
+                      src={assets.image}
+                      alt={currentWord.name}
+                      className="w-80 h-80 md:w-96 md:h-96 object-cover rounded-2xl shadow-2xl"
+                    />
+                  ) : (
+                    <div className="w-80 h-80 md:w-96 md:h-96 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
+                      <span className="text-6xl md:text-8xl font-bold text-white drop-shadow-lg">
+                        {currentWord.name}
+                      </span>
+                    </div>
+                  )
+                })()}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded-full shadow-lg">
+                  <span className="text-xl font-bold">{currentWord.name}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Show drop zones during gameplay
+            <div className="flex flex-row justify-center my-8 md:my-12 gap-2">
+              {currentWord.slices.map((slice, index) => (
+                <DropZone
+                  key={index}
+                  expectedId={slice.id}
+                  height={height}
+                  width={width}
+                  placedSlice={correctSlices[index]}
+                  word={currentWord}
+                  onDrop={(sliceId) => handleDrop(index, sliceId)}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="w-full max-w-4xl flex flex-row flex-wrap justify-center items-center gap-4 md:gap-6 p-6 bg-white/50 rounded-2xl shadow-inner min-h-[150px]">
             {availableSlices.map((slice) => (
