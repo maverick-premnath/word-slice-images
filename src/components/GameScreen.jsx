@@ -43,9 +43,64 @@ export default function GameScreen() {
       setIsComplete(true)
       setShowCelebration(true)
       setHasPlayedWord(false)
-      setTimeout(() => setShowCelebration(false), 1600)
+      setIsSpeakingWord(false)
+      
+      // Automatically play the full word after a short delay
+      setTimeout(async () => {
+        setShowCelebration(false)
+        await handleAutoPlayWord()
+      }, 1600)
     }
   }, [correctSlices, currentWord, isComplete])
+
+  // New function to automatically play the full word (doesn't show bubbles)
+  const handleAutoPlayWord = useCallback(async () => {
+    if (!currentWord || isSpeakingWord) return
+
+    try {
+      setIsSpeakingWord(true)
+      // Try to play full word audio file first, fallback to speech synthesis
+      const assets = getWordAssets(currentWord)
+      if (assets.audio) {
+        const audio = new Audio(assets.audio)
+        try {
+          await audio.play()
+        } catch (e) {
+          console.log('Audio file failed, using speech synthesis:', e)
+          ensureAudioReady()
+          await speak(currentWord.name, {
+            rate: 0.92,
+            pitch: 1.05,
+            lang: 'en-IN',
+            voiceHint: 'child'
+          })
+        }
+      } else {
+        ensureAudioReady()
+        await speak(currentWord.name, {
+          rate: 0.92,
+          pitch: 1.05,
+          lang: 'en-IN',
+          voiceHint: 'child'
+        })
+      }
+      
+      // Don't automatically show bubbles - wait for user to click buttons
+      
+    } finally {
+      setIsSpeakingWord(false)
+    }
+  }, [currentWord, isSpeakingWord])
+
+  // Function to replay the word when "Say Again" is clicked
+  const handleSayAgain = useCallback(async () => {
+    await handleAutoPlayWord()
+  }, [handleAutoPlayWord])
+
+  // Function to finish the puzzle and show bubbles
+  const handleFinishPuzzle = useCallback(() => {
+    setShowBubbles(true)
+  }, [])
 
   if (!currentWord) return null
 
@@ -234,34 +289,61 @@ export default function GameScreen() {
           </motion.h2>
 
           <AnimatePresence>
-            {isComplete && (
+            {isComplete && !showBubbles && (
               <motion.div
-                className="text-center my-6 flex flex-col items-center gap-4"
+                className="text-center my-6 flex flex-col items-center gap-6"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
               >
-                <h2 className="text-5xl md:text-7xl font-bold text-green-600">
-                  {currentWord.name}
-                </h2>
-                <p className="text-lg md:text-xl text-sky-700 max-w-md">
-                  Press play to hear the whole word. The bubble party will begin right after!
-                </p>
-                <motion.button
-                  whileHover={{ scale: isSpeakingWord ? 1 : 1.05 }}
-                  whileTap={{ scale: isSpeakingWord ? 1 : 0.95 }}
-                  disabled={isSpeakingWord}
-                  onClick={handlePlayFullWord}
-                  className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-xl font-semibold transition-colors ${
-                    isSpeakingWord ? 'bg-slate-300 text-slate-500' : 'bg-pink-500 hover:bg-pink-400 text-white'
-                  }`}
-                  style={{ touchAction: 'manipulation' }}
-                >
-                  <span className="text-2xl" aria-hidden="true">
-                    {speakerEmoji}
-                  </span>
-                  {isSpeakingWord ? 'Playing...' : hasPlayedWord ? 'Play the word again' : 'Play the word'}
-                </motion.button>
+                <div className="relative">
+                  {(() => {
+                    const assets = getWordAssets(currentWord)
+                    return assets.image ? (
+                      <img
+                        src={assets.image}
+                        alt={currentWord.name}
+                        className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-2xl shadow-2xl"
+                      />
+                    ) : (
+                      <div className="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
+                        <span className="text-6xl md:text-8xl font-bold text-white drop-shadow-lg">
+                          {currentWord.name}
+                        </span>
+                      </div>
+                    )
+                  })()}
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded-full shadow-lg">
+                    <span className="text-xl font-bold">Well Done! 🎉</span>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <motion.button
+                    onClick={handleSayAgain}
+                    disabled={isSpeakingWord}
+                    className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-lg font-semibold transition-colors ${
+                      isSpeakingWord 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-blue-500 hover:bg-blue-400 text-white'
+                    }`}
+                    whileHover={!isSpeakingWord ? { scale: 1.05 } : {}}
+                    whileTap={!isSpeakingWord ? { scale: 0.95 } : {}}
+                  >
+                    <span className="text-xl">🔊</span>
+                    {isSpeakingWord ? 'Playing...' : 'Say Again'}
+                  </motion.button>
+                  
+                  <motion.button
+                    onClick={handleFinishPuzzle}
+                    className="flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-lg font-semibold bg-purple-500 hover:bg-purple-400 text-white transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="text-xl">🎈</span>
+                    Finish Puzzle
+                  </motion.button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -281,32 +363,22 @@ export default function GameScreen() {
           </div>
 
           <div className="w-full max-w-4xl flex flex-row flex-wrap justify-center items-center gap-4 md:gap-6 p-6 bg-white/50 rounded-2xl shadow-inner min-h-[150px]">
-            {isComplete ? (
-              <motion.h3
-                className="text-2xl font-bold text-green-600"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                Well Done!
-              </motion.h3>
-            ) : (
-              availableSlices.map((slice) => (
-                <WordSlice
-                  key={slice.id}
-                  slice={slice}
-                  word={currentWord}
-                  height={height}
-                  width={width}
-                  onDrop={(dropZoneId) => {
-                    // Find the drop zone index
-                    const dropZoneIndex = currentWord.slices.findIndex(s => s.id === dropZoneId)
-                    if (dropZoneIndex !== -1) {
-                      handleDrop(dropZoneIndex, slice.id)
-                    }
-                  }}
-                />
-              ))
-            )}
+            {availableSlices.map((slice) => (
+              <WordSlice
+                key={slice.id}
+                slice={slice}
+                word={currentWord}
+                height={height}
+                width={width}
+                onDrop={(dropZoneId) => {
+                  // Find the drop zone index
+                  const dropZoneIndex = currentWord.slices.findIndex(s => s.id === dropZoneId)
+                  if (dropZoneIndex !== -1) {
+                    handleDrop(dropZoneIndex, slice.id)
+                  }
+                }}
+              />
+            ))}
           </div>
 
           <motion.button

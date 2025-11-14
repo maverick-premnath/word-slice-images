@@ -18,6 +18,7 @@ export default function LevelsScreen() {
       <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 md:gap-8">
         {WORD_DATABASE.map((word, index) => {
           const assets = getWordAssets(word)
+          console.log(`${word.name}: ${assets.image}`)
           return (
             <motion.button
               key={word.name}

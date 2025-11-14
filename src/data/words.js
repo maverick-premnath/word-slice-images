@@ -1,8 +1,8 @@
 // GitHub URL for production deployment
-const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/public/words';
+ const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/public/words';
 
 // Local development URL - uncomment this line for local testing
-// const GITHUB_BASE_URL = '/words';
+//const GITHUB_BASE_URL = '/words';
 
 export const WORD_DATABASE = [
   {
