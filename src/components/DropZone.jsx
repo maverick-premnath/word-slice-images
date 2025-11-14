@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { getWordAssets } from '../data/words'
 
 export default function DropZone({ expectedId, height, width, placedSlice, word, onDrop }) {
   const [isDragOver, setIsDragOver] = useState(false)
@@ -7,6 +8,7 @@ export default function DropZone({ expectedId, height, width, placedSlice, word,
 
   const numSlices = word?.slices.length || 1
   const position = placedSlice ? (placedSlice.id / (numSlices - 1)) * 100 : 0
+  const assets = getWordAssets(word)
 
   return (
     <motion.div
@@ -40,7 +42,7 @@ export default function DropZone({ expectedId, height, width, placedSlice, word,
         <div
           className="w-full h-full"
           style={{
-            backgroundImage: `url('${word.image}')`,
+            backgroundImage: assets.image ? `url('${assets.image}')` : 'none',
             backgroundSize: `${numSlices * 100}% 100%`,
             backgroundPosition: `${position}% 0`,
             backgroundRepeat: 'no-repeat',
