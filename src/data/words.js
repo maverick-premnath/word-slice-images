@@ -1,8 +1,8 @@
 // GitHub URL for production deployment
-// const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/assets/words';
+const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/maverick-premnath/word-slice-images/main/public/words';
 
 // Local development URL - uncomment this line for local testing
-const GITHUB_BASE_URL = '/words';
+// const GITHUB_BASE_URL = '/words';
 
 export const WORD_DATABASE = [
   {
@@ -309,7 +309,7 @@ export const WORD_DATABASE = [
 export const getWordAssets = (word) => {
   const baseUrl = `${GITHUB_BASE_URL}/${word.directory}`;
   
-  // Complete mapping of all words that have images
+  // Complete mapping of all words that have images (37 total)
   const imageMap = {
     Punnu: 'IMG_0315.JPG',
     Eat: 'IMG_5145.PNG',
@@ -330,7 +330,25 @@ export const getWordAssets = (word) => {
     Mela: 'IMG_5147.JPG',
     Soodu: 'IMG_5141.PNG',
     Cat: 'IMG_5149.jpg',
-    Aeli: 'IMG_0344.jpg'
+    Aeli: 'IMG_0344.jpg',
+    // New images you added:
+    Yummy: 'yummy.jpg',
+    Tshirt: 'tshirt.jpg',
+    Thanni: 'thanni.jpg',
+    Pottu: 'pottu.jpg',
+    Papaya: 'papapa.jpg',
+    Open: 'open.jpg',
+    Odu: 'odu.jpg',
+    Ladoo: 'ladoo.jpg',
+    Kuli: 'kuli.jpg',
+    Koiya: 'koiya.jpg',
+    Kasu: 'kasu.jpg',
+    Karam: 'karam.jpg',
+    Juice: 'juice.jpg',
+    Give: 'give.jpg',
+    Fish: 'fish.jpg',
+    Button: 'button.jpg',
+    Banana: 'banana.jpg'
   };
 
   // Complete mapping of phonetic audio filenames for all words
