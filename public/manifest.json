@@ -2,7 +2,7 @@
   "name": "WordSlice Phonetic Game",
   "short_name": "WordSlice",
   "description": "Interactive phonetic learning game for kids",
-  "start_url": "/",
+  "start_url": "/word-slice-images/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#7C3AED",
