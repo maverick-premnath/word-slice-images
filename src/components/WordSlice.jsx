@@ -6,6 +6,7 @@ const speakerEmoji = '🔊'
 
 export default function WordSlice({ slice, word, height, width, onDrop }) {
   const [isPlaced, setIsPlaced] = useState(false)
+  const [isShaking, setIsShaking] = useState(false)
   const sliceRef = useRef(null)
   const dragOriginRef = useRef({ centerX: 0, centerY: 0, width: 0, height: 0 })
 
@@ -94,6 +95,10 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
       if (placed !== false) {
         setIsPlaced(true)
       }
+    } else {
+      // Wrong drop zone - trigger red flash animation
+      setIsShaking(true)
+      setTimeout(() => setIsShaking(false), 600)
     }
   }
 
@@ -124,6 +129,14 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
       dragSnapToOrigin={!isPlaced}
       dragMomentum={false}
       onDragEnd={handleDragEnd}
+      animate={isShaking ? {
+        x: [0, -15, 15, -12, 12, -8, 8, 0],
+        rotate: [0, -8, 8, -6, 6, -4, 4, 0],
+        transition: { 
+          duration: 0.4,
+          ease: "easeInOut"
+        }
+      } : {}}
       whileDrag={{ 
         scale: 1.1, 
         rotate: 5, 
