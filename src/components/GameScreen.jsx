@@ -109,13 +109,13 @@ export default function GameScreen() {
   if (!currentWord) return null
 
   const getSliceDimensions = (numSlices) => {
-    const height = 'h-40 md:h-56'
+    const height = 'h-[12.5rem] md:h-[17.5rem]'
     let width = ''
     switch (numSlices) {
-      case 2: width = 'w-20 md:w-28'; break
-      case 3: width = 'w-14 md:w-20'; break
-      case 4: width = 'w-10 md:w-14'; break
-      default: width = 'w-40 md:w-56'
+      case 2: width = 'w-[6.25rem] md:w-[8.75rem]'; break
+      case 3: width = 'w-[4.375rem] md:w-[6.25rem]'; break
+      case 4: width = 'w-[3.125rem] md:w-[4.375rem]'; break
+      default: width = 'h-[12.5rem] md:h-[17.5rem]'
     }
     return { height, width }
   }
@@ -321,10 +321,10 @@ export default function GameScreen() {
                       <img
                         src={assets.image}
                         alt={currentWord.name}
-                        className="w-80 h-80 md:w-96 md:h-96 object-cover rounded-2xl shadow-2xl"
+                        className="w-[30rem] h-[30rem] md:w-[36rem] md:h-[36rem] object-cover rounded-2xl shadow-2xl"
                       />
                     ) : (
-                      <div className="w-80 h-80 md:w-96 md:h-96 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
+                      <div className="w-[30rem] h-[30rem] md:w-[36rem] md:h-[36rem] bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
                         <span className="text-6xl md:text-8xl font-bold text-white drop-shadow-lg">
                           {currentWord.name}
                         </span>
@@ -332,7 +332,7 @@ export default function GameScreen() {
                     )
                   })()}
                   <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded-full shadow-lg">
-                    <span className="text-xl font-bold">Well Done! 🎉</span>
+                    <span className="text-2xl font-bold">Well Done! 🎉</span>
                   </div>
                 </div>
                 
@@ -350,18 +350,18 @@ export default function GameScreen() {
                     <img
                       src={assets.image}
                       alt={currentWord.name}
-                      className="w-96 h-96 md:w-[28rem] md:h-[28rem] object-cover rounded-2xl shadow-2xl"
+                      className="w-[36rem] h-[36rem] md:w-[42rem] md:h-[42rem] object-cover rounded-2xl shadow-2xl"
                     />
                   ) : (
-                    <div className="w-96 h-96 md:w-[28rem] md:h-[28rem] bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
+                    <div className="w-[36rem] h-[36rem] md:w-[42rem] md:h-[42rem] bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
                       <span className="text-6xl md:text-8xl font-bold text-white drop-shadow-lg">
                         {currentWord.name}
                       </span>
                     </div>
                   )
                 })()}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded-full shadow-lg">
-                  <span className="text-xl font-bold">{currentWord.name}</span>
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded-full shadow-lg">
+                  <span className="text-4xl font-bold">{currentWord.name}</span>
                 </div>
               </div>
             </div>

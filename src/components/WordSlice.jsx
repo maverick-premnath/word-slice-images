@@ -143,9 +143,9 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
           }
         }}
       >
-        <span className="text-sm font-medium text-gray-800">{slice.wordPart}</span>
+        <span className="text-base font-medium text-gray-800">{slice.wordPart}</span>
         <button 
-          className="text-lg"
+          className="text-xl"
           aria-label="Play sound"
         >
           {speakerEmoji}
