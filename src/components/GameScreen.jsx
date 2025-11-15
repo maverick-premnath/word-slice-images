@@ -22,6 +22,57 @@ export default function GameScreen() {
   const [isSpeakingWord, setIsSpeakingWord] = useState(false)
   const advanceTimeoutRef = useRef(null)
   const [isNavigatingBack, setIsNavigatingBack] = useState(false)
+  const preloadedAudiosRef = useRef(new Map())
+
+  // Preload all audio assets for the current word
+  useEffect(() => {
+    if (!currentWord) return
+
+    const preloadAudios = async () => {
+      const assets = getWordAssets(currentWord)
+      
+      // Preload full word audio
+      if (assets.audio && !preloadedAudiosRef.current.has(assets.audio)) {
+        try {
+          const audio = new Audio(assets.audio)
+          audio.preload = 'auto'
+          audio.load()
+          preloadedAudiosRef.current.set(assets.audio, audio)
+        } catch (e) {
+          console.log('Failed to preload word audio:', assets.audio, e)
+        }
+      }
+
+      // Preload phonetic audios
+      if (assets.phonetics) {
+        for (const [sliceId, audioUrl] of Object.entries(assets.phonetics)) {
+          if (audioUrl && !preloadedAudiosRef.current.has(audioUrl)) {
+            try {
+              const audio = new Audio(audioUrl)
+              audio.preload = 'auto'
+              audio.load()
+              preloadedAudiosRef.current.set(audioUrl, audio)
+            } catch (e) {
+              console.log('Failed to preload phonetic audio:', audioUrl, e)
+            }
+          }
+        }
+      }
+    }
+
+    preloadAudios()
+  }, [currentWord])
+
+  // Helper function to get preloaded audio or create new one
+  const getPreloadedAudio = (audioUrl) => {
+    if (preloadedAudiosRef.current.has(audioUrl)) {
+      return preloadedAudiosRef.current.get(audioUrl)
+    }
+    // Fallback to creating new audio if not preloaded
+    const audio = new Audio(audioUrl)
+    preloadedAudiosRef.current.set(audioUrl, audio)
+    return audio
+  }
 
   useEffect(() => {
     if (!currentWord) return
@@ -66,7 +117,7 @@ export default function GameScreen() {
       // Try to play full word audio file first, fallback to speech synthesis
       const assets = getWordAssets(currentWord)
       if (assets.audio) {
-        const audio = new Audio(assets.audio)
+        const audio = getPreloadedAudio(assets.audio)
         try {
           await audio.play()
         } catch (e) {
@@ -131,7 +182,7 @@ export default function GameScreen() {
       // Play phonetic audio file instead of text-to-speech
       const assets = getWordAssets(currentWord)
       if (assets.phonetics[sliceId]) {
-        const audio = new Audio(assets.phonetics[sliceId])
+        const audio = getPreloadedAudio(assets.phonetics[sliceId])
         audio.play().catch(e => console.log('Audio play failed:', e))
       }
     }
@@ -195,7 +246,7 @@ export default function GameScreen() {
       // Try to play full word audio file first, fallback to speech synthesis
       const assets = getWordAssets(currentWord)
       if (assets.audio) {
-        const audio = new Audio(assets.audio)
+        const audio = getPreloadedAudio(assets.audio)
         try {
           await audio.play()
         } catch (e) {
