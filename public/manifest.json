@@ -1,0 +1,21 @@
+{
+  "name": "WordSlice Phonetic Game",
+  "short_name": "WordSlice",
+  "description": "Interactive phonetic learning game for kids",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "./word-slice-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./word-slice-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

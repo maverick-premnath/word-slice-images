@@ -378,7 +378,7 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
     html5: true
   })
 
-  const BUBBLE_COUNT = 22
+  const BUBBLE_COUNT = 10
 
   const triggerPopSound = useCallback((size) => {
     const rateBase = 1.12 - Math.min(size, 120) / 220
