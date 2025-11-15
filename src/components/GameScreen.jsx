@@ -50,6 +50,8 @@ export default function GameScreen() {
       advanceTimeoutRef.current = setTimeout(async () => {
         setShowCelebration(false)
         await handleAutoPlayWord()
+        // Automatically show bubbles after playing the word
+        setShowBubbles(true)
         advanceTimeoutRef.current = null
       }, 1600)
     }
@@ -319,10 +321,10 @@ export default function GameScreen() {
                       <img
                         src={assets.image}
                         alt={currentWord.name}
-                        className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-2xl shadow-2xl"
+                        className="w-80 h-80 md:w-96 md:h-96 object-cover rounded-2xl shadow-2xl"
                       />
                     ) : (
-                      <div className="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
+                      <div className="w-80 h-80 md:w-96 md:h-96 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
                         <span className="text-6xl md:text-8xl font-bold text-white drop-shadow-lg">
                           {currentWord.name}
                         </span>
@@ -334,32 +336,6 @@ export default function GameScreen() {
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                  <motion.button
-                    onClick={handleSayAgain}
-                    disabled={isSpeakingWord}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-lg font-semibold transition-colors ${
-                      isSpeakingWord 
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                        : 'bg-blue-500 hover:bg-blue-400 text-white'
-                    }`}
-                    whileHover={!isSpeakingWord ? { scale: 1.05 } : {}}
-                    whileTap={!isSpeakingWord ? { scale: 0.95 } : {}}
-                  >
-                    <span className="text-xl">🔊</span>
-                    {isSpeakingWord ? 'Playing...' : 'Say Again'}
-                  </motion.button>
-                  
-                  <motion.button
-                    onClick={handleFinishPuzzle}
-                    className="flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-lg font-semibold bg-purple-500 hover:bg-purple-400 text-white transition-colors"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <span className="text-xl">🎈</span>
-                    Finish Puzzle
-                  </motion.button>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -374,10 +350,10 @@ export default function GameScreen() {
                     <img
                       src={assets.image}
                       alt={currentWord.name}
-                      className="w-80 h-80 md:w-96 md:h-96 object-cover rounded-2xl shadow-2xl"
+                      className="w-96 h-96 md:w-[28rem] md:h-[28rem] object-cover rounded-2xl shadow-2xl"
                     />
                   ) : (
-                    <div className="w-80 h-80 md:w-96 md:h-96 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
+                    <div className="w-96 h-96 md:w-[28rem] md:h-[28rem] bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-2xl flex items-center justify-center">
                       <span className="text-6xl md:text-8xl font-bold text-white drop-shadow-lg">
                         {currentWord.name}
                       </span>
