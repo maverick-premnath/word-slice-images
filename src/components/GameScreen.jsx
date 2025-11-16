@@ -470,6 +470,7 @@ export default function GameScreen() {
                 height={height}
                 width={width}
                 playAudio={playAudio}
+                stopCurrentAudio={stopCurrentAudio}
                 onDrop={(dropZoneId) => {
                   // Find the drop zone index
                   const dropZoneIndex = currentWord.slices.findIndex(s => s.id === dropZoneId)

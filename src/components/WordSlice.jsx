@@ -4,7 +4,7 @@ import { getWordAssets } from '../data/words'
 
 const speakerEmoji = '🔊'
 
-export default function WordSlice({ slice, word, height, width, playAudio, onDrop }) {
+export default function WordSlice({ slice, word, height, width, playAudio, stopCurrentAudio, onDrop }) {
   const [isPlaced, setIsPlaced] = useState(false)
   const [isShaking, setIsShaking] = useState(false)
   const sliceRef = useRef(null)
@@ -103,14 +103,14 @@ export default function WordSlice({ slice, word, height, width, playAudio, onDro
       
       // Play no-no-no sound using global audio manager
       if (playAudio) {
-        playAudio('./no-no-no.mp3')
+        playAudio('./sounds/no-no-no.mp3')
       } else {
         // Fallback if playAudio not provided
         try {
-          const audio = new Audio('./no-no-no.mp3')
+          const audio = new Audio('./sounds/no-no-no.mp3')
           audio.play().catch(e => console.log('Audio play failed:', e))
         } catch (e) {
-          console.log('Failed to play no-no-no audio:', e)
+          console.log('Failed to create no-no-no audio:', e)
         }
       }
     }

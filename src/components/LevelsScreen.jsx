@@ -9,7 +9,7 @@ export default function LevelsScreen() {
   // Preload bubble pop and no-no-no sounds
   React.useEffect(() => {
     const preloadAudios = () => {
-      const audioFiles = ['./sounds/bubble-pop.mp3', './sounds/no-no-no.mp3']
+      const audioFiles = ['/word-slice-images/sounds/bubble-pop.mp3', '/word-slice-images/sounds/no-no-no.mp3']
       
       audioFiles.forEach(audioPath => {
         try {

@@ -372,7 +372,7 @@ export default function BubbleGame({ onComplete, onExit, backgroundStyle }) {
   const lastFrameRef = useRef(0)
   const [poppedCount, setPoppedCount] = useState(0)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  const [playPopSound] = useSound('./sounds/bubble-pop.mp3?v=2', {
+  const [playPopSound] = useSound('/word-slice-images/sounds/bubble-pop.mp3?v=2', {
     volume: 0.6,
     interrupt: true,
     html5: true
