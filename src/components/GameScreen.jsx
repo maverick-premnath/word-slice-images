@@ -23,6 +23,34 @@ export default function GameScreen() {
   const advanceTimeoutRef = useRef(null)
   const [isNavigatingBack, setIsNavigatingBack] = useState(false)
   const preloadedAudiosRef = useRef(new Map())
+  const currentAudioRef = useRef(null)
+
+  // Helper function to stop any currently playing audio
+  const stopCurrentAudio = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current.currentTime = 0
+      currentAudioRef.current = null
+    }
+  }
+
+  // Helper function to play audio with interruption
+  const playAudio = (audioUrl) => {
+    stopCurrentAudio()
+    
+    const audio = getPreloadedAudio(audioUrl)
+    currentAudioRef.current = audio
+    
+    audio.play().catch(e => {
+      console.log('Audio play failed:', e)
+      currentAudioRef.current = null
+    })
+    
+    // Clear reference when audio ends
+    audio.onended = () => {
+      currentAudioRef.current = null
+    }
+  }
 
   // Preload all audio assets for the current word
   useEffect(() => {
@@ -117,6 +145,7 @@ export default function GameScreen() {
       // Try to play full word audio file first, fallback to speech synthesis
       const assets = getWordAssets(currentWord)
       if (assets.audio) {
+        stopCurrentAudio()
         const audio = getPreloadedAudio(assets.audio)
         try {
           await audio.play()
@@ -182,8 +211,7 @@ export default function GameScreen() {
       // Play phonetic audio file instead of text-to-speech
       const assets = getWordAssets(currentWord)
       if (assets.phonetics[sliceId]) {
-        const audio = getPreloadedAudio(assets.phonetics[sliceId])
-        audio.play().catch(e => console.log('Audio play failed:', e))
+        playAudio(assets.phonetics[sliceId])
       }
     }
   }
@@ -441,6 +469,7 @@ export default function GameScreen() {
                 word={currentWord}
                 height={height}
                 width={width}
+                playAudio={playAudio}
                 onDrop={(dropZoneId) => {
                   // Find the drop zone index
                   const dropZoneIndex = currentWord.slices.findIndex(s => s.id === dropZoneId)

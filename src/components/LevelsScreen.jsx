@@ -1,9 +1,38 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import { WORD_DATABASE, getWordAssets } from '../data/words'
+import React from 'react'
 
 export default function LevelsScreen() {
   const startGame = useGameStore((state) => state.startGame)
+
+  // Preload bubble pop and no-no-no sounds
+  React.useEffect(() => {
+    const preloadAudios = () => {
+      const audioFiles = ['./bubble-pop.mp3', './no-no-no.mp3']
+      
+      audioFiles.forEach(audioPath => {
+        try {
+          const audio = new Audio(audioPath)
+          audio.preload = 'auto'
+          audio.load()
+          // Optional: play a very short silent audio to unlock audio context on iOS
+          audio.volume = 0.01
+          audio.play().then(() => {
+            audio.pause()
+            audio.currentTime = 0
+            audio.volume = 1
+          }).catch(() => {
+            // Ignore autoplay policy errors
+          })
+        } catch (e) {
+          console.log(`Failed to preload ${audioPath}:`, e)
+        }
+      })
+    }
+
+    preloadAudios()
+  }, [])
 
   return (
     <div className="min-h-screen p-6 md:p-12" style={{ backgroundColor: '#f0f9ff' }}>

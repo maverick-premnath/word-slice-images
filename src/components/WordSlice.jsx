@@ -4,11 +4,12 @@ import { getWordAssets } from '../data/words'
 
 const speakerEmoji = '🔊'
 
-export default function WordSlice({ slice, word, height, width, onDrop }) {
+export default function WordSlice({ slice, word, height, width, playAudio, onDrop }) {
   const [isPlaced, setIsPlaced] = useState(false)
   const [isShaking, setIsShaking] = useState(false)
   const sliceRef = useRef(null)
   const dragOriginRef = useRef({ centerX: 0, centerY: 0, width: 0, height: 0 })
+  const currentAudioRef = useRef(null)
 
   const handleDragStart = () => {
     const rect = sliceRef.current?.getBoundingClientRect()
@@ -96,9 +97,22 @@ export default function WordSlice({ slice, word, height, width, onDrop }) {
         setIsPlaced(true)
       }
     } else {
-      // Wrong drop zone - trigger red flash animation
+      // Wrong drop zone - trigger shake animation and play sound
       setIsShaking(true)
       setTimeout(() => setIsShaking(false), 600)
+      
+      // Play no-no-no sound using global audio manager
+      if (playAudio) {
+        playAudio('./no-no-no.mp3')
+      } else {
+        // Fallback if playAudio not provided
+        try {
+          const audio = new Audio('./no-no-no.mp3')
+          audio.play().catch(e => console.log('Audio play failed:', e))
+        } catch (e) {
+          console.log('Failed to play no-no-no audio:', e)
+        }
+      }
     }
   }
 
