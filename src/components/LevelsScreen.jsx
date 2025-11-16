@@ -52,6 +52,10 @@ export default function LevelsScreen() {
             <motion.button
               key={word.name}
               onClick={() => startGame(word)}
+              onTouchEnd={(e) => {
+                e.preventDefault()
+                startGame(word)
+              }}
               className="aspect-square bg-white rounded-2xl shadow-lg overflow-hidden relative group"
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
