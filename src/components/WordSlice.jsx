@@ -138,10 +138,10 @@ export default function WordSlice({ slice, word, height, width, playAudio, stopC
         touchAction: 'none',
       }}
       drag
-      dragElastic={0.1}
-      dragSnapToOrigin={true}
-      dragMomentum={false}
       onDragStart={handleDragStart}
+      dragElastic={0.2}
+      dragSnapToOrigin={!isPlaced}
+      dragMomentum={false}
       onDragEnd={handleDragEnd}
       animate={isShaking ? {
         x: [0, -15, 15, -12, 12, -8, 8, 0],
